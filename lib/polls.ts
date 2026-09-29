@@ -26,7 +26,7 @@ export async function listPollsFor(voterId: string): Promise<PollListItem[]> {
         where pa.poll_id = p.id and pa.voter_id = ${voterId}
       ) as participated
     from polls p join poll_states s using (id)
-    order by p.created_at desc`;
+    order by s.list_position`;
   return rows.map((r) => ({
     id: r.id,
     title: r.title,
@@ -40,7 +40,7 @@ export async function listPollsForAdmin(): Promise<AdminPollListItem[]> {
     select p.id, p.title, p.closes_at, s.is_closed,
       (select count(*) from participations pa where pa.poll_id = p.id)::int as participation_count
     from polls p join poll_states s using (id)
-    order by p.created_at desc`;
+    order by s.list_position`;
   return rows.map((r) => ({
     id: r.id,
     title: r.title,

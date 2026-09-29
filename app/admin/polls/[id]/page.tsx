@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getPoll, getParticipationStatus } from "@/lib/polls";
 import { requireAdmin } from "@/lib/session";
+import { ClosingLine } from "../../../ui/closing-info";
 import { ConfirmButton } from "../../../ui/confirm-button";
 import { DeletedPoll } from "../../../ui/deleted-poll";
 import { ResultView } from "../../../ui/result-view";
@@ -23,6 +24,7 @@ export default async function AdminPollPage(props: PageProps<"/admin/polls/[id]"
             ← 목록
           </Link>
           <h1 className="text-xl font-bold">{poll.title}</h1>
+          <ClosingLine closesAt={poll.closesAt} isClosed={poll.isClosed} />
         </div>
 
         <ResultView poll={poll} showMyChoice={false} />

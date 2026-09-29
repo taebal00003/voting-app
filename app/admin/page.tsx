@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listPollsForAdmin } from "@/lib/polls";
 import { requireAdmin } from "@/lib/session";
+import { ClosingBadge } from "../ui/closing-info";
 import { AdminHeader } from "./ui";
 
 export default async function AdminPage() {
@@ -27,7 +28,10 @@ export default async function AdminPage() {
                   href={`/admin/polls/${poll.id}`}
                   className="card flex items-center justify-between gap-3 hover:border-slate-400"
                 >
-                  <span className="font-medium">{poll.title}</span>
+                  <span className="min-w-0 space-y-0.5">
+                    <span className="block font-medium">{poll.title}</span>
+                    <ClosingBadge closesAt={poll.closesAt} isClosed={poll.isClosed} />
+                  </span>
                   <span className="shrink-0 text-sm text-slate-600">{poll.participationCount}명 참여</span>
                 </Link>
               </li>
