@@ -1,26 +1,42 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic",
+    "Noto Sans KR", sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  word-break: keep-all;
+}
+
+@utility card {
+  @apply rounded-2xl border border-slate-200 bg-white p-4;
+}
+@utility btn {
+  @apply inline-flex h-11 items-center justify-center rounded-xl px-4 font-medium transition-colors disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-slate-900 text-white hover:bg-slate-700;
+}
+@utility btn-secondary {
+  @apply btn border border-slate-300 bg-white text-slate-800 hover:bg-slate-100;
+}
+@utility btn-danger {
+  @apply btn border border-red-200 bg-white text-red-600 hover:bg-red-50;
+}
+@utility input {
+  @apply h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base outline-none focus:border-slate-900;
+}
+@utility error {
+  @apply text-sm text-red-600;
 }
