@@ -34,9 +34,21 @@ describe("결과를 그래프로 보여주기 위해 요약한다", () => {
     ]);
   });
 
-  test("비율은 정수로 반올림한다", () => {
-    const summary = summarizeResult([option("가", 1), option("나", 1), option("다", 1)]);
+  test("비율은 정수로 반올림한다 (합이 100이 되도록 맞추지는 않는다)", () => {
+    const twoToOne = summarizeResult([option("가", 2), option("나", 1)]);
+    const even = summarizeResult([option("가", 1), option("나", 1), option("다", 1)]);
 
-    expect(summary.rows.map((r) => r.percent)).toEqual([33, 33, 33]);
+    expect(twoToOne.rows.map((r) => r.percent)).toEqual([67, 33]);
+    expect(even.rows.map((r) => r.percent)).toEqual([33, 33, 33]);
+  });
+
+  test("표를 받았지만 반올림하면 0%인 선택지는 1% 미만으로 구분한다", () => {
+    const summary = summarizeResult([option("가", 249), option("나", 1), option("다", 0)]);
+
+    expect(summary.rows.map((r) => [r.label, r.percent, r.underOnePercent])).toEqual([
+      ["가", 100, false],
+      ["나", 0, true],
+      ["다", 0, false],
+    ]);
   });
 });

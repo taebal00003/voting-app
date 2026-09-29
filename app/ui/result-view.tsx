@@ -13,7 +13,7 @@ export function ResultView({ poll, showMyChoice }: { poll: Poll; showMyChoice: b
           결과
         </h2>
         <p className="text-sm text-slate-600">
-          총 <strong className="tabular-nums text-slate-900">{total}명</strong> 투표
+          총 <strong className="tabular-nums text-slate-900">{total}명</strong> 참여
         </p>
       </div>
 
@@ -21,7 +21,8 @@ export function ResultView({ poll, showMyChoice }: { poll: Poll; showMyChoice: b
         {rows.map((row) => (
           <li key={row.id}>
             <span className="sr-only">
-              {row.label}, {row.voteCount}명, {row.percent}%{row.leading ? ", 1위" : ""}
+              {row.label}, {row.voteCount}명, {row.underOnePercent ? "1% 미만" : `${row.percent}%`}
+              {row.leading ? ", 1위" : ""}
             </span>
             <div className="flex items-start justify-between gap-3" aria-hidden>
               <span className="min-w-0 break-words font-medium">
@@ -29,7 +30,8 @@ export function ResultView({ poll, showMyChoice }: { poll: Poll; showMyChoice: b
                 {row.leading && <span className="ml-1.5 text-xs font-semibold text-slate-900">1위</span>}
               </span>
               <span className="shrink-0 text-sm tabular-nums text-slate-600">
-                {row.voteCount}명 · <strong className="text-slate-900">{row.percent}%</strong>
+                {row.voteCount}명 ·{" "}
+                <strong className="text-slate-900">{row.underOnePercent ? "1% 미만" : `${row.percent}%`}</strong>
               </span>
             </div>
             {showMyChoice && (
@@ -37,9 +39,12 @@ export function ResultView({ poll, showMyChoice }: { poll: Poll; showMyChoice: b
                 <MyChoiceBadge pollId={poll.id} optionId={row.id} />
               </div>
             )}
-            <div className="mt-1.5 h-3 rounded-[4px] bg-slate-100" aria-hidden>
+            {/* 막대는 왼쪽 기준선에서 시작하고 데이터 끝(오른쪽)만 둥글다. */}
+            <div className="mt-1.5 h-3 overflow-hidden rounded-r-[4px] bg-slate-100" aria-hidden>
               <div
-                className={`h-full rounded-r-[4px] ${row.leading ? "bg-slate-800" : "bg-slate-400"}`}
+                className={`h-full rounded-r-[4px] ${row.underOnePercent ? "min-w-1" : ""} ${
+                  row.leading ? "bg-slate-800" : "bg-slate-400"
+                }`}
                 style={{ width: `${row.percent}%` }}
               />
             </div>
