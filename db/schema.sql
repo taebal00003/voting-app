@@ -12,6 +12,8 @@ create table if not exists polls (
   title text not null,
   created_at timestamptz not null default now()
 );
+-- 마감 시각. null이면 마감 없음(삭제될 때까지 진행).
+alter table polls add column if not exists closes_at timestamptz;
 
 -- 비밀 투표: 투표 행위는 개별 행 없이 선택지별 개수로만 남는다 (docs/adr/0002).
 create table if not exists options (

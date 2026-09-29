@@ -59,6 +59,14 @@ export function NewPollForm() {
         )}
       </fieldset>
 
+      <label className="block space-y-1.5">
+        <span className="text-sm font-medium">마감 시각 (선택)</span>
+        <input name="closesAt" type="datetime-local" className="input" />
+        <span className="block text-xs text-slate-500">
+          한국 시간 기준이에요. 비워두면 삭제할 때까지 계속 진행돼요. 만든 뒤에는 바꿀 수 없어요.
+        </span>
+      </label>
+
       {state.error && <p className="error">{state.error}</p>}
       <button type="submit" className="btn-primary w-full" disabled={pending}>
         {pending ? "만드는 중…" : "투표 만들기"}

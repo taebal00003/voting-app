@@ -1,8 +1,16 @@
 import { isUuid, sql } from "./db";
-import { checkPollDraft } from "./rules";
+import { checkClosingTime, checkPollDraft } from "./rules";
 
 export type Option = { id: string; label: string; voteCount: number };
-export type Poll = { id: string; title: string; options: Option[] };
+export type Poll = {
+  id: string;
+  title: string;
+  /** 마감 시각. null이면 마감 없음. */
+  closesAt: Date | null;
+  /** DB 시각 기준으로 마감 시각이 지났는지 */
+  isClosed: boolean;
+  options: Option[];
+};
 export type PollListItem = { id: string; title: string; participated: boolean };
 export type AdminPollListItem = { id: string; title: string; participationCount: number };
 
@@ -39,7 +47,9 @@ export async function listPollsForAdmin(): Promise<AdminPollListItem[]> {
 export async function getPoll(id: string): Promise<Poll | null> {
   if (!isUuid(id)) return null;
   const [pollRows, optionRows] = await Promise.all([
-    sql`select id, title from polls where id = ${id}`,
+    sql`
+      select id, title, closes_at, (closes_at is not null and closes_at <= now()) as is_closed
+      from polls where id = ${id}`,
     sql`select id, label, vote_count from options where poll_id = ${id} order by position`,
   ]);
   const poll = pollRows[0];
@@ -47,6 +57,8 @@ export async function getPoll(id: string): Promise<Poll | null> {
   return {
     id: poll.id,
     title: poll.title,
+    closesAt: poll.closes_at ? new Date(poll.closes_at) : null,
+    isClosed: poll.is_closed,
     options: optionRows.map((o) => ({ id: o.id, label: o.label, voteCount: o.vote_count })),
   };
 }
@@ -58,7 +70,7 @@ export async function hasParticipated(pollId: string, voterId: string): Promise<
   return rows.length > 0;
 }
 
-export type CastResult = "ok" | "already" | "gone";
+export type CastResult = "ok" | "already" | "closed" | "gone";
 
 /**
  * 참여 기록 추가와 선택지 개수 증가를 한 SQL 문으로 처리해 둘 중 하나만 남는 일이 없게 한다.
@@ -74,7 +86,11 @@ export async function castVote(
     with participation as (
       insert into participations (poll_id, voter_id)
       select ${pollId}::uuid, ${voterId}::uuid
-      where exists (select 1 from options where id = ${optionId} and poll_id = ${pollId})
+      where exists (
+        select 1 from options o join polls p on p.id = o.poll_id
+        where o.id = ${optionId} and o.poll_id = ${pollId}
+          and (p.closes_at is null or p.closes_at > now())
+      )
       on conflict do nothing
       returning 1
     )
@@ -83,22 +99,32 @@ export async function castVote(
       and exists (select 1 from participation)
     returning id`;
   if (rows.length > 0) return "ok";
-  return (await hasParticipated(pollId, voterId)) ? "already" : "gone";
+  if (await hasParticipated(pollId, voterId)) return "already";
+  const poll = await sql`
+    select 1 from polls where id = ${pollId} and closes_at is not null and closes_at <= now()`;
+  return poll.length > 0 ? "closed" : "gone";
 }
 
 export type CreatePollResult = { ok: true; pollId: string } | { ok: false; error: string };
 
-/** 운영자가 입력한 그대로의 제목과 선택지 칸들을 받아, 검증한 뒤 투표를 만든다. */
+/**
+ * 운영자가 입력한 그대로의 제목, 선택지 칸들, 마감 시각(비우면 마감 없음)을 받아
+ * 검증한 뒤 투표를 만든다. 마감 시각은 한국 시간으로 해석한다.
+ */
 export async function createPoll(
   rawTitle: string,
   rawOptions: string[],
+  rawClosesAt = "",
 ): Promise<CreatePollResult> {
   const checked = checkPollDraft(rawTitle, rawOptions);
   if (!checked.ok) return checked;
+  const closing = checkClosingTime(rawClosesAt, new Date());
+  if (!closing.ok) return closing;
   const { title, options } = checked.value;
+  const closesAt = closing.value?.toISOString() ?? null;
   const rows = await sql`
     with poll as (
-      insert into polls (title) values (${title}) returning id
+      insert into polls (title, closes_at) values (${title}, ${closesAt}) returning id
     ), inserted as (
       insert into options (poll_id, label, position)
       select poll.id, o.label, o.position

@@ -26,6 +26,7 @@ export async function createPollAction(_prev: FormState, formData: FormData): Pr
   const result = await createPoll(
     String(formData.get("title") ?? ""),
     formData.getAll("option").map(String),
+    String(formData.get("closesAt") ?? ""),
   );
   if (!result.ok) return { error: result.error };
   redirect(`/admin/polls/${result.pollId}`);

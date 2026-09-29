@@ -9,6 +9,7 @@ const messages: Record<NonNullable<VoteState["result"]>, string | null> = {
   ok: null,
   already: "이미 이 투표에 참여했어요.",
   gone: "삭제된 투표예요.",
+  closed: "마감된 투표예요. 더 이상 투표할 수 없어요.",
   "no-voter": "투표 코드가 더 이상 유효하지 않아요. 코드를 다시 입력해 주세요.",
   "no-choice": "선택지를 하나 골라 주세요.",
 };
@@ -16,7 +17,16 @@ const messages: Record<NonNullable<VoteState["result"]>, string | null> = {
 type VoteOption = { id: string; label: string };
 
 /** 투표 전에는 결과가 보이면 안 되므로 선택지의 이름만 받는다. */
-export function VoteForm({ pollId, options }: { pollId: string; options: VoteOption[] }) {
+export function VoteForm({
+  pollId,
+  options,
+  closed,
+}: {
+  pollId: string;
+  options: VoteOption[];
+  /** 마감됐으면 선택지와 버튼을 숨기지 않고 비활성화한다. */
+  closed: boolean;
+}) {
   const router = useRouter();
   const [unchosen, setUnchosen] = useState(false);
   const [state, formAction, pending] = useActionState<VoteState, FormData>(
@@ -46,23 +56,30 @@ export function VoteForm({ pollId, options }: { pollId: string; options: VoteOpt
       }}
     >
       <input type="hidden" name="pollId" value={pollId} />
-      <fieldset className="space-y-3">
+      {closed && (
+        <p className="card border-amber-300 bg-amber-50 text-sm font-medium text-amber-900">
+          {messages.closed}
+        </p>
+      )}
+      <fieldset className="space-y-3 disabled:opacity-60" disabled={closed}>
         <legend className="sr-only">선택지</legend>
         {options.map((option) => (
           <label
             key={option.id}
-            className="card flex cursor-pointer items-center gap-3 has-[:checked]:border-slate-900 has-[:checked]:ring-1 has-[:checked]:ring-slate-900"
+            className="card flex cursor-pointer items-center in-disabled:cursor-not-allowed gap-3 has-[:checked]:border-slate-900 has-[:checked]:ring-1 has-[:checked]:ring-slate-900"
           >
             <input type="radio" name="optionId" value={option.id} className="size-5 accent-slate-900" />
             <span className="font-medium">{option.label}</span>
           </label>
         ))}
       </fieldset>
-      {message && <p className="error">{message}</p>}
-      <button type="submit" className="btn-primary w-full" disabled={pending}>
+      {message && !closed && <p className="error">{message}</p>}
+      <button type="submit" className="btn-primary w-full" disabled={pending || closed}>
         {pending ? "투표하는 중…" : "투표하기"}
       </button>
-      <p className="text-center text-sm text-slate-500">투표하면 결과를 볼 수 있어요. 비밀 투표예요.</p>
+      {!closed && (
+        <p className="text-center text-sm text-slate-500">투표하면 결과를 볼 수 있어요. 비밀 투표예요.</p>
+      )}
     </form>
   );
 }

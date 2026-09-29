@@ -29,12 +29,15 @@ export default async function PollPage(props: PageProps<"/polls/[id]">) {
         {participated && notice === "already" && (
           <p className="card text-sm text-slate-700">이미 이 투표에 참여했어요. 결과는 아래와 같아요.</p>
         )}
-        {participated ? <ResultView poll={poll} showMyChoice /> : (
+        {!participated && (
           <VoteForm
             pollId={poll.id}
             options={poll.options.map(({ id, label }) => ({ id, label }))}
+            closed={poll.isClosed}
           />
         )}
+        {/* 투표 전에는 결과를 보여주지 않는다. 마감된 뒤에는 명부의 모든 투표자에게 공개한다. */}
+        {(participated || poll.isClosed) && <ResultView poll={poll} showMyChoice={participated} />}
       </main>
     </>
   );

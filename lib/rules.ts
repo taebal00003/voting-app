@@ -63,3 +63,29 @@ export function checkRosterNames(text: string): Checked<string[]> {
   }
   return { ok: true, value: names };
 }
+
+const CLOSING_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
+
+/**
+ * 마감 시각 입력 칸의 원시 값을 한국 시간(+09:00)으로 해석한다. 비어 있으면 마감 없음(null).
+ * 초 단위도 받는다. 화면에서는 분까지만 입력하지만, 테스트에서 몇 초 뒤 마감을 만들 때 쓴다.
+ */
+export function checkClosingTime(raw: string, now: Date): Checked<Date | null> {
+  const value = raw.trim();
+  if (!value) return { ok: true, value: null };
+  const match = CLOSING_TIME_PATTERN.exec(value);
+  const closesAt = match && new Date(`${match.slice(1, 4).join("-")}T${match[4]}:${match[5]}:${match[6] ?? "00"}+09:00`);
+  // 2월 30일처럼 없는 날짜는 Date가 다음 달로 넘겨버리므로, 한국 시간으로 되돌려 날짜가 같은지 확인한다.
+  const sameDay =
+    closesAt &&
+    !Number.isNaN(closesAt.getTime()) &&
+    new Date(closesAt.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10) ===
+      match.slice(1, 4).join("-");
+  if (!sameDay) {
+    return { ok: false, error: "마감 시각을 날짜와 시간까지 입력해 주세요." };
+  }
+  if (closesAt.getTime() <= now.getTime()) {
+    return { ok: false, error: "마감 시각은 지금 이후여야 해요." };
+  }
+  return { ok: true, value: closesAt };
+}
