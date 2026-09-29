@@ -21,6 +21,8 @@ npm run db:setup   # 테이블 생성 (여러 번 실행해도 안전)
 npm run dev
 ```
 
+`http://localhost:3000`으로 접속하세요. 휴대폰 등에서 사설 IP(`10.x.x.x`)로 접속하는 것도 `next.config.ts`의 `allowedDevOrigins`로 허용되어 있어요. 다른 대역(예: `192.168.x.x`)으로 접속하면 개발 서버가 화면의 JavaScript를 막아서 버튼이 아무 반응 없이 동작하지 않으니, 그 대역을 `allowedDevOrigins`에 추가하세요.
+
 ## 테스트
 
 투표 도메인 모듈을 실제 Postgres에 대고 테스트합니다. 운영 DB를 건드리지 않도록 **테스트 전용 Neon 브랜치**를 씁니다.

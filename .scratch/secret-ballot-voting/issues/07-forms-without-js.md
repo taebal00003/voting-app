@@ -12,4 +12,10 @@
 
 - [ ] JavaScript가 없을 때 세 폼의 동작을 정한다: 안내만 보여줄지, JavaScript 없이도 제출되게 할지
 - [ ] 정한 방식대로 구현하고, JavaScript를 끈 브라우저에서 확인한다
-- [ ] 개발 중 IP 접속은 `allowedDevOrigins`로 허용해야 한다는 점을 README에 적는다
+- [x] 개발 중 IP 접속은 `allowedDevOrigins`로 허용해야 한다는 점을 README에 적는다
+
+## Comments
+
+- 2026-09-29 같은 증상이 세 번 반복되어(10.107.1.3, 10.106.2.230), `allowedDevOrigins: ["10.*.*.*"]`를 추가하고 README에 적었다.
+  - 확인 결과: 10.106.2.230 출처는 200, 192.168.0.5 출처는 403.
+  - JavaScript 없이 폼이 조용히 실패하는 근본 문제(항목 1, 2)는 아직 남아 있다.
