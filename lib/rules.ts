@@ -1,5 +1,4 @@
-import { randomInt } from "node:crypto";
-
+// 서버와 브라우저 양쪽에서 쓰므로 Node 전용 모듈을 import하지 않는다.
 export const LIMITS = {
   titleMax: 100,
   optionLabelMax: 50,
@@ -7,18 +6,6 @@ export const LIMITS = {
   optionsMax: 10,
   voterNameMax: 20,
 } as const;
-
-// 헷갈리는 글자(0/O, 1/I/L)를 뺀 알파벳
-const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-const CODE_LENGTH = 8;
-
-export function generateVoterCode(): string {
-  let code = "";
-  for (let i = 0; i < CODE_LENGTH; i++) {
-    code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
-  }
-  return code;
-}
 
 export function normalizeVoterCode(input: string): string {
   return input.toUpperCase().replace(/[\s-]/g, "");

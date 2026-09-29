@@ -1,11 +1,12 @@
 "use client";
 
-import { startTransition, useActionState, useState } from "react";
+import { useActionState, useState } from "react";
+import { submitKeepingInput } from "../../../ui/submit-keeping-input";
 import type { FormState } from "../../../actions";
+import { LIMITS } from "@/lib/rules";
 import { createPollAction } from "../../actions";
 
-const OPTIONS_MIN = 2;
-const OPTIONS_MAX = 10;
+const { optionsMin: OPTIONS_MIN, optionsMax: OPTIONS_MAX } = LIMITS;
 
 export function NewPollForm() {
   const [state, formAction, pending] = useActionState<FormState, FormData>(createPollAction, {
@@ -18,16 +19,11 @@ export function NewPollForm() {
   return (
     <form
       className="space-y-5"
-      // action prop 대신 직접 제출해서, 검증 오류가 나도 입력한 내용이 지워지지 않게 한다.
-      onSubmit={(e) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        startTransition(() => formAction(formData));
-      }}
+      onSubmit={submitKeepingInput(formAction)}
     >
       <label className="block space-y-1.5">
         <span className="text-sm font-medium">제목</span>
-        <input name="title" className="input" maxLength={100} placeholder="예: MT 장소는 어디로 할까요?" required />
+        <input name="title" className="input" maxLength={LIMITS.titleMax} placeholder="예: MT 장소는 어디로 할까요?" required />
       </label>
 
       <fieldset className="space-y-2">
@@ -36,7 +32,7 @@ export function NewPollForm() {
         </legend>
         {keys.map((key, i) => (
           <div key={key} className="flex gap-2">
-            <input name="option" className="input" maxLength={50} placeholder={`선택지 ${i + 1}`} />
+            <input name="option" className="input" maxLength={LIMITS.optionLabelMax} placeholder={`선택지 ${i + 1}`} />
             {keys.length > OPTIONS_MIN && (
               <button
                 type="button"

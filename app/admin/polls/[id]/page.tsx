@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getPoll, getTurnout } from "@/lib/polls";
+import { getPoll, getParticipationStatus } from "@/lib/polls";
 import { requireAdmin } from "@/lib/session";
 import { ConfirmButton } from "../../../ui/confirm-button";
 import { DeletedPoll } from "../../../ui/deleted-poll";
@@ -12,7 +12,7 @@ export default async function AdminPollPage(props: PageProps<"/admin/polls/[id]"
   const { id } = await props.params;
   const poll = await getPoll(id);
   if (!poll) return <DeletedPoll backHref="/admin" />;
-  const turnout = await getTurnout(poll.id);
+  const status = await getParticipationStatus(poll.id);
 
   return (
     <>
@@ -30,8 +30,8 @@ export default async function AdminPollPage(props: PageProps<"/admin/polls/[id]"
         <section className="card space-y-3">
           <h2 className="font-semibold">참여 현황</h2>
           <p className="text-xs text-slate-500">비밀 투표라서 누가 무엇을 골랐는지는 알 수 없어요.</p>
-          <NameList title={`참여 ${turnout.participated.length}명`} names={turnout.participated} />
-          <NameList title={`미참여 ${turnout.notYet.length}명`} names={turnout.notYet} />
+          <NameList title={`참여 ${status.participated.length}명`} names={status.participated} />
+          <NameList title={`미참여 ${status.notYet.length}명`} names={status.notYet} />
         </section>
 
         <form action={deletePollAction}>

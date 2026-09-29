@@ -1,19 +1,15 @@
 import { isUuid, sql } from "./db";
-import type { PollDraft } from "./rules";
+import { checkPollDraft } from "./rules";
 
 export type Option = { id: string; label: string; voteCount: number };
-export type Poll = { id: string; title: string; createdAt: Date; options: Option[] };
-export type PollListItem = { id: string; title: string; createdAt: Date; participated: boolean };
-export type AdminPollListItem = {
-  id: string;
-  title: string;
-  createdAt: Date;
-  participantCount: number;
-};
+export type Poll = { id: string; title: string; options: Option[] };
+export type PollListItem = { id: string; title: string; participated: boolean };
+export type AdminPollListItem = { id: string; title: string; participationCount: number };
 
 export async function listPollsFor(voterId: string): Promise<PollListItem[]> {
+  if (!isUuid(voterId)) return [];
   const rows = await sql`
-    select p.id, p.title, p.created_at,
+    select p.id, p.title,
       exists (
         select 1 from participations pa
         where pa.poll_id = p.id and pa.voter_id = ${voterId}
@@ -23,29 +19,27 @@ export async function listPollsFor(voterId: string): Promise<PollListItem[]> {
   return rows.map((r) => ({
     id: r.id,
     title: r.title,
-    createdAt: r.created_at,
     participated: r.participated,
   }));
 }
 
 export async function listPollsForAdmin(): Promise<AdminPollListItem[]> {
   const rows = await sql`
-    select p.id, p.title, p.created_at,
-      (select count(*) from participations pa where pa.poll_id = p.id)::int as participant_count
+    select p.id, p.title,
+      (select count(*) from participations pa where pa.poll_id = p.id)::int as participation_count
     from polls p
     order by p.created_at desc`;
   return rows.map((r) => ({
     id: r.id,
     title: r.title,
-    createdAt: r.created_at,
-    participantCount: r.participant_count,
+    participationCount: r.participation_count,
   }));
 }
 
 export async function getPoll(id: string): Promise<Poll | null> {
   if (!isUuid(id)) return null;
   const [pollRows, optionRows] = await Promise.all([
-    sql`select id, title, created_at from polls where id = ${id}`,
+    sql`select id, title from polls where id = ${id}`,
     sql`select id, label, vote_count from options where poll_id = ${id} order by position`,
   ]);
   const poll = pollRows[0];
@@ -53,12 +47,12 @@ export async function getPoll(id: string): Promise<Poll | null> {
   return {
     id: poll.id,
     title: poll.title,
-    createdAt: poll.created_at,
     options: optionRows.map((o) => ({ id: o.id, label: o.label, voteCount: o.vote_count })),
   };
 }
 
 export async function hasParticipated(pollId: string, voterId: string): Promise<boolean> {
+  if (!isUuid(pollId) || !isUuid(voterId)) return false;
   const rows = await sql`
     select 1 from participations where poll_id = ${pollId} and voter_id = ${voterId}`;
   return rows.length > 0;
@@ -75,7 +69,7 @@ export async function castVote(
   optionId: string,
   voterId: string,
 ): Promise<CastResult> {
-  if (!isUuid(pollId) || !isUuid(optionId)) return "gone";
+  if (!isUuid(pollId) || !isUuid(optionId) || !isUuid(voterId)) return "gone";
   const rows = await sql`
     with participation as (
       insert into participations (poll_id, voter_id)
@@ -92,17 +86,26 @@ export async function castVote(
   return (await hasParticipated(pollId, voterId)) ? "already" : "gone";
 }
 
-export async function createPoll(draft: PollDraft): Promise<string> {
+export type CreatePollResult = { ok: true; pollId: string } | { ok: false; error: string };
+
+/** 운영자가 입력한 그대로의 제목과 선택지 칸들을 받아, 검증한 뒤 투표를 만든다. */
+export async function createPoll(
+  rawTitle: string,
+  rawOptions: string[],
+): Promise<CreatePollResult> {
+  const checked = checkPollDraft(rawTitle, rawOptions);
+  if (!checked.ok) return checked;
+  const { title, options } = checked.value;
   const rows = await sql`
     with poll as (
-      insert into polls (title) values (${draft.title}) returning id
+      insert into polls (title) values (${title}) returning id
     ), inserted as (
       insert into options (poll_id, label, position)
       select poll.id, o.label, o.position
-      from poll, unnest(${draft.options}::text[]) with ordinality as o(label, position)
+      from poll, unnest(${options}::text[]) with ordinality as o(label, position)
     )
     select id from poll`;
-  return rows[0].id;
+  return { ok: true, pollId: rows[0].id };
 }
 
 export async function deletePoll(id: string): Promise<void> {
@@ -110,10 +113,11 @@ export async function deletePoll(id: string): Promise<void> {
   await sql`delete from polls where id = ${id}`;
 }
 
-export type Turnout = { participated: string[]; notYet: string[] };
+export type ParticipationStatus = { participated: string[]; notYet: string[] };
 
 /** 명부 기준 참여/미참여 이름. 이름순으로만 돌려주어 참여 순서가 드러나지 않게 한다. */
-export async function getTurnout(pollId: string): Promise<Turnout> {
+export async function getParticipationStatus(pollId: string): Promise<ParticipationStatus> {
+  if (!isUuid(pollId)) return { participated: [], notYet: [] };
   const rows = await sql`
     select v.name, (pa.voter_id is not null) as participated
     from voters v

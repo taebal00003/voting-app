@@ -28,7 +28,7 @@ export default async function AdminPage() {
                   className="card flex items-center justify-between gap-3 hover:border-slate-400"
                 >
                   <span className="font-medium">{poll.title}</span>
-                  <span className="shrink-0 text-sm text-slate-600">{poll.participantCount}명 참여</span>
+                  <span className="shrink-0 text-sm text-slate-600">{poll.participationCount}명 참여</span>
                 </Link>
               </li>
             ))}

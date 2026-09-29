@@ -4,8 +4,8 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { createPoll, deletePoll } from "@/lib/polls";
 import { addVoters, reissueCode, removeVoter } from "@/lib/roster";
-import { checkPollDraft, checkRosterNames } from "@/lib/rules";
-import { endAdminSession, isAdminPassword, requireAdmin, startAdminSession } from "@/lib/session";
+import { isAdminPassword } from "@/lib/admin-token";
+import { endAdminSession, requireAdmin, startAdminSession } from "@/lib/session";
 import type { FormState } from "../actions";
 
 export async function loginAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -23,13 +23,12 @@ export async function logoutAction(): Promise<void> {
 
 export async function createPollAction(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin();
-  const checked = checkPollDraft(
+  const result = await createPoll(
     String(formData.get("title") ?? ""),
     formData.getAll("option").map(String),
   );
-  if (!checked.ok) return { error: checked.error };
-  const id = await createPoll(checked.value);
-  redirect(`/admin/polls/${id}`);
+  if (!result.ok) return { error: result.error };
+  redirect(`/admin/polls/${result.pollId}`);
 }
 
 export async function deletePollAction(formData: FormData): Promise<void> {
@@ -40,12 +39,8 @@ export async function deletePollAction(formData: FormData): Promise<void> {
 
 export async function addVotersAction(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin();
-  const checked = checkRosterNames(String(formData.get("names") ?? ""));
-  if (!checked.ok) return { error: checked.error };
-  const result = await addVoters(checked.value);
-  if ("taken" in result) {
-    return { error: `이미 명부에 있는 이름이에요: ${result.taken.join(", ")}` };
-  }
+  const result = await addVoters(String(formData.get("names") ?? ""));
+  if (!result.ok) return { error: result.error };
   refresh();
   return { error: null };
 }

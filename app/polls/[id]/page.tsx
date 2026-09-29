@@ -9,6 +9,7 @@ import { VoterHeader } from "../../ui/voter-header";
 
 export default async function PollPage(props: PageProps<"/polls/[id]">) {
   const { id } = await props.params;
+  const { notice } = await props.searchParams;
   const voter = await getCurrentVoter();
   if (!voter) return <CodeEntry />;
 
@@ -25,6 +26,9 @@ export default async function PollPage(props: PageProps<"/polls/[id]">) {
           ← 목록
         </Link>
         <h1 className="text-xl font-bold">{poll.title}</h1>
+        {participated && notice === "already" && (
+          <p className="card text-sm text-slate-700">이미 이 투표에 참여했어요. 결과는 아래와 같아요.</p>
+        )}
         {participated ? <ResultView poll={poll} showMyChoice /> : (
           <VoteForm
             pollId={poll.id}

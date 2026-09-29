@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, ADMIN_MAX_AGE, createAdminToken, isValidAdminToken } from "./admin-token";
 import { findVoterByCode, type Voter } from "./roster";
 
-export { isAdminPassword } from "./admin-token";
-
 const VOTER_COOKIE = "voter_code";
 const VOTER_MAX_AGE = 365 * 24 * 60 * 60;
 

@@ -22,7 +22,7 @@ export function ResultView({ poll, showMyChoice }: { poll: Poll; showMyChoice: b
                   {showMyChoice && <MyChoiceBadge pollId={poll.id} optionId={option.id} />}
                 </span>
                 <span className="shrink-0 text-sm tabular-nums text-slate-600">
-                  {option.voteCount}표 · {percent}%
+                  {option.voteCount}명 · {percent}%
                 </span>
               </div>
               <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">

@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useActionState, useState } from "react";
+import { useActionState, useState } from "react";
+import { submitKeepingInput } from "../../ui/submit-keeping-input";
 import type { FormState } from "../../actions";
 import { addVotersAction } from "../actions";
 
@@ -17,12 +18,7 @@ export function AddVotersForm() {
   return (
     <form
       className="card space-y-3"
-      // action prop 대신 직접 제출해서, 오류가 나도 입력한 이름이 지워지지 않게 한다.
-      onSubmit={(e) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        startTransition(() => formAction(formData));
-      }}
+      onSubmit={submitKeepingInput(formAction)}
     >
       <label className="block space-y-1.5">
         <span className="text-sm font-medium">투표자 추가</span>

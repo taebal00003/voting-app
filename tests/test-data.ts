@@ -6,30 +6,18 @@ import { sql } from "../lib/db";
  * 테스트마다 고유 접두사를 만들고, 테스트가 끝나면 그 접두사로 만든 데이터를 지운다.
  * 투표자 이름과 투표 제목은 반드시 `name(...)`/`title(...)`로 만들어야 정리된다.
  */
-export function useTestData() {
+export function trackTestData() {
   let prefix = "";
-  const tags = new Set<string>();
-
-  const current = () => {
-    if (!prefix) {
-      prefix = `t${randomUUID().slice(0, 8)}_`;
-      tags.add(prefix);
-    }
-    return prefix;
-  };
+  const current = () => (prefix ||= `t${randomUUID().slice(0, 8)}_`);
 
   afterEach(async () => {
-    for (const tag of tags) await cleanup(tag);
-    tags.clear();
+    if (prefix) await cleanup(prefix);
     prefix = "";
   });
 
-  return {
-    /** 투표자 이름 (20자 제한 안에 들어가도록 짧게) */
-    name: (label: string) => `${current()}${label}`,
-    /** 투표 제목 */
-    title: (label: string) => `${current()}${label}`,
-  };
+  // 투표자 이름은 20자 제한이 있으므로 접두사(10자)를 짧게 유지한다.
+  const tagged = (label: string) => `${current()}${label}`;
+  return { name: tagged, title: tagged };
 }
 
 async function cleanup(prefix: string) {

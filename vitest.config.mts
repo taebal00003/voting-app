@@ -15,6 +15,9 @@ if (testDatabaseUrl === env.DATABASE_URL) {
   throw new Error("TEST_DATABASE_URL이 DATABASE_URL과 같습니다. 테스트는 운영 DB와 다른 DB에서만 돌립니다.");
 }
 
+// globalSetup은 메인 프로세스에서 돌기 때문에 test.env가 아니라 process.env로 넘겨야 한다.
+process.env.TEST_DATABASE_URL = testDatabaseUrl;
+
 export default defineConfig({
   test: {
     environment: "node",
