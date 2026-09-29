@@ -17,7 +17,11 @@ describe("운영자가 투표자 명부를 관리한다", () => {
     expect(result).toEqual({ ok: true, added: 2 });
     const roster = await rosterNamed(a, b);
     expect(roster.map((v) => v.name)).toEqual([a, b].sort());
-    for (const voter of roster) expect(voter.code).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/);
+    // 스펙: 헷갈리는 글자(0/O, 1/I/L)를 뺀 8자리 대문자·숫자
+    for (const voter of roster) {
+      expect(voter.code).toMatch(/^[A-Z2-9]{8}$/);
+      expect(voter.code).not.toMatch(/[01OIL]/);
+    }
   });
 
   test("이미 명부에 있는 이름이 섞이면 아무도 등록되지 않고 겹친 이름을 알려준다", async () => {
@@ -26,8 +30,7 @@ describe("운영자가 투표자 명부를 관리한다", () => {
 
     const result = await addVoters(`${fresh}\n${kept}`);
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain(kept);
+    expect(result).toEqual({ ok: false, taken: [kept], error: expect.stringContaining(kept) });
     expect((await rosterNamed(fresh, kept)).map((v) => v.name)).toEqual([kept]);
   });
 

@@ -18,7 +18,7 @@ async function adminPollTitles(title: string) {
 const options = (n: number) => Array.from({ length: n }, (_, i) => `선택지${i + 1}`);
 
 describe("운영자가 투표를 만든다", () => {
-  test("제목과 선택지로 만든 투표는 입력한 순서대로 표 0개인 선택지를 가진다", async () => {
+  test("제목과 선택지로 만든 투표는 입력한 순서대로, 아직 아무도 고르지 않은 선택지를 가진다", async () => {
     const pollId = await created(data.title("점심"), ["피자", "치킨", "짜장면"]);
 
     const poll = await getPoll(pollId);
@@ -52,26 +52,31 @@ describe("운영자가 투표를 만든다", () => {
 
     const result = await createPoll(title, rawOptions);
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).not.toBe("");
-    if (title.trim()) expect(await adminPollTitles(title.trim())).toEqual([]);
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/\S/) });
+    expect(await adminPollTitles(title.trim())).toEqual([]);
   });
 
   test("제목 100자, 선택지 10개, 선택지 50자까지는 만들 수 있다", async () => {
-    const title = data.title("가".repeat(90));
+    const prefix = data.title("");
+    const title = prefix + "가".repeat(100 - prefix.length);
+    expect(title).toHaveLength(100);
+
     const result = await createPoll(title, [...options(9), "나".repeat(50)]);
 
-    expect(result.ok).toBe(true);
+    expect(result).toEqual({ ok: true, pollId: expect.any(String) });
   });
 
-  test("운영자 목록 맨 앞에 참여 0명으로 나온다", async () => {
-    await created(data.title("먼저"), ["가", "나"]);
-    const title = data.title("나중");
-    await created(title, ["가", "나"]);
+  test("운영자 목록에 최신순, 참여 0명으로 나온다", async () => {
+    const [first, second] = [data.title("먼저"), data.title("나중")];
+    await created(first, ["가", "나"]);
+    await created(second, ["가", "나"]);
 
-    const [latest] = await listPollsForAdmin();
+    const mine = (await listPollsForAdmin()).filter((p) => p.title === first || p.title === second);
 
-    expect(latest).toMatchObject({ title, participationCount: 0 });
+    expect(mine.map((p) => [p.title, p.participationCount])).toEqual([
+      [second, 0],
+      [first, 0],
+    ]);
   });
 
   test("투표자 목록에 최신순으로 나오고 아직 투표 완료가 아니다", async () => {

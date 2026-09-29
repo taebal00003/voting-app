@@ -32,7 +32,7 @@ async function counts(pollId: string) {
 }
 
 describe("투표자가 투표하고 결과를 본다", () => {
-  test("투표하면 그 선택지의 표가 1 늘고 목록에 투표 완료로 표시된다", async () => {
+  test("투표하면 그 선택지를 고른 수가 1 늘고 목록에 투표 완료로 표시된다", async () => {
     const { voters: [a], pollId, pizza } = await setup("철수");
 
     expect(await castVote(pollId, pizza.id, a.id)).toBe("ok");
@@ -42,7 +42,7 @@ describe("투표자가 투표하고 결과를 본다", () => {
     expect((await listPollsFor(a.id)).find((p) => p.id === pollId)?.participated).toBe(true);
   });
 
-  test("같은 투표자의 두 번째 투표는 거부되고 표는 그대로다", async () => {
+  test("같은 투표자의 두 번째 투표는 거부되고 결과는 그대로다", async () => {
     const { voters: [a], pollId, pizza, chicken } = await setup("철수");
     await castVote(pollId, pizza.id, a.id);
 
@@ -79,14 +79,16 @@ describe("투표자가 투표하고 결과를 본다", () => {
     expect(await castVote("not-a-uuid", pizza.id, a.id)).toBe("gone");
     expect(await castVote(pollId, "not-a-uuid", a.id)).toBe("gone");
     expect(await castVote(crypto.randomUUID(), pizza.id, a.id)).toBe("gone");
+    expect(await castVote(pollId, pizza.id, "not-a-uuid")).toBe("gone");
+    expect(await counts(pollId)).toEqual([0, 0]);
     expect(await getPoll("not-a-uuid")).toBeNull();
     expect(await hasParticipated("not-a-uuid", a.id)).toBe(false);
     expect(await hasParticipated(pollId, "not-a-uuid")).toBe(false);
     expect(await getParticipationStatus("not-a-uuid")).toEqual({ participated: [], notYet: [] });
-    expect(await listPollsFor("not-a-uuid")).toEqual(expect.any(Array));
+    expect(await listPollsFor("not-a-uuid")).toEqual([]);
   });
 
-  test("여러 명이 투표하면 표 합계와 참여 수가 같고, 참여 현황은 이름순이다", async () => {
+  test("여러 명이 투표하면 결과 합계와 참여 수가 같고, 참여 현황은 이름순이다", async () => {
     const { voters: [c, a, b, d], pollId, pizza, chicken } = await setup("다", "가", "나", "라");
     await castVote(pollId, chicken.id, c.id);
     await castVote(pollId, pizza.id, a.id);
@@ -99,7 +101,7 @@ describe("투표자가 투표하고 결과를 본다", () => {
     expect(status.notYet.filter((n) => ours.includes(n))).toEqual([d.name]);
   });
 
-  test("명부에서 뺀 투표자의 참여 기록과 표는 결과에 남는다", async () => {
+  test("명부에서 뺀 투표자의 참여 기록과 투표 행위는 결과에 남는다", async () => {
     const { voters: [a], pollId, pizza } = await setup("철수");
     await castVote(pollId, pizza.id, a.id);
 
@@ -109,28 +111,21 @@ describe("투표자가 투표하고 결과를 본다", () => {
     expect((await getParticipationStatus(pollId)).participated).toContain(a.name);
   });
 
-  test("비밀 투표: 투표자와 선택지를 함께 가리키는 테이블이나 열이 없다", async () => {
+  test("비밀 투표: 투표자와 연결된 곳은 참여 기록뿐이고, 참여 기록에는 무엇을 골랐는지 담을 자리가 없다", async () => {
     // 스펙이 허용한 유일한 스키마 수준 테스트 (결정 기록 0002).
-    const rows = await sql`
-      select tc.table_name, ccu.table_name as references_table
+    const references = await sql`
+      select distinct tc.table_name
       from information_schema.table_constraints tc
       join information_schema.constraint_column_usage ccu
         on tc.constraint_name = ccu.constraint_name and tc.table_schema = ccu.table_schema
-      where tc.constraint_type = 'FOREIGN KEY' and tc.table_schema = 'public'`;
-    const referencesByTable = new Map<string, Set<string>>();
-    for (const r of rows) {
-      const set = referencesByTable.get(r.table_name) ?? new Set<string>();
-      set.add(r.references_table);
-      referencesByTable.set(r.table_name, set);
-    }
+      where tc.constraint_type = 'FOREIGN KEY' and tc.table_schema = 'public'
+        and ccu.table_name = 'voters'`;
+    expect(references.map((r) => r.table_name)).toEqual(["participations"]);
 
-    for (const [table, refs] of referencesByTable) {
-      expect(refs.has("voters") && refs.has("options"), `${table}이 투표자와 선택지를 함께 가리킴`).toBe(false);
-    }
-    const voterColumns = await sql`
-      select table_name from information_schema.columns
-      where table_schema = 'public' and column_name in ('voter_id', 'option_id')
-      group by table_name having count(distinct column_name) = 2`;
-    expect(voterColumns).toEqual([]);
+    const columns = await sql`
+      select column_name from information_schema.columns
+      where table_schema = 'public' and table_name = 'participations'
+      order by column_name`;
+    expect(columns.map((c) => c.column_name)).toEqual(["poll_id", "voter_id"]);
   });
 });

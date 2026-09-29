@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** resolved
+**Status:** ready-for-human
 
 - [x] Next 16의 `proxy` 규약(구 middleware)으로 운영자 경로 전체를 가드한다. 로그인 화면 자체는 가드에서 제외한다. 먼저 `node_modules/next/dist/docs/`에서 proxy 문서를 읽는다.
 - [x] 가드가 있어도 운영자 페이지와 운영자용 Server Action 안의 권한 확인은 그대로 둔다. Server Action은 직접 POST로도 호출될 수 있기 때문이다.
@@ -24,3 +24,4 @@
     - 다른 비밀번호로 서명한 토큰과 만료된 토큰은 307로 로그인 화면에 간다.
     - 투표자 화면은 200으로 영향이 없다.
   - 로그인 폼 제출(Server Action)은 브라우저로 확인하지 않았다.
+- 2026-09-29 상태를 `ready-for-human`으로 되돌렸다. 가드 작업은 끝났지만, 틀린 비밀번호 안내와 로그아웃은 사람이 브라우저에서 한 번 확인해야 닫을 수 있다.

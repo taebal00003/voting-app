@@ -120,15 +120,15 @@ Status: ready-for-agent
   - 공개 인터페이스는 원시 입력을 받아 검증까지 스스로 한다. 호출하는 쪽은 검증을 따로 하지 않는다.
   - 지금은 입력 검증이 별도 규칙 모듈에 있고 Server Action에서 호출된다. 이 검증을 도메인 모듈 안으로 옮겨서 경계를 하나로 만든다.
   - 인터페이스 형태는 다음과 같다.
-    - `createPoll(title, rawOptions)` → 성공 시 투표 ID, 실패 시 사용자에게 보여줄 오류 문구
+    - `createPoll(rawTitle, rawOptions)` → `{ ok: true, pollId }` 또는 `{ ok: false, error }` (사용자에게 보여줄 오류 문구)
     - `deletePoll(pollId)`
     - `getPoll(pollId)` → 제목과 선택지별 표 수, 없으면 null
     - `listPollsFor(voterId)` → 최신순, 투표 완료 여부 포함
-    - `listPollsForAdmin()` → 최신순, 참여 수 포함
+    - `listPollsForAdmin()` → 최신순, 참여 수(`participationCount`) 포함
     - `castVote(pollId, optionId, voterId)` → `ok | already | gone`
     - `hasParticipated(pollId, voterId)`
-    - `getTurnout(pollId)` → 참여 이름과 미참여 이름, 이름순
-    - `addVoters(rawNamesText)` → 등록 수, 또는 검증 오류나 이미 있는 이름 목록
+    - `getParticipationStatus(pollId)` → 참여 이름과 미참여 이름, 이름순
+    - `addVoters(rawNames)` → `{ ok: true, added }`, 또는 `{ ok: false, error }` (검증 오류), 또는 `{ ok: false, error, taken }` (이미 명부에 있는 이름 목록)
     - `removeVoter(voterId)`, `reissueCode(voterId)`
     - `listRoster()` → 이름순, 코드 포함
     - `findVoterByCode(rawCode)` → 코드 정규화까지 포함
