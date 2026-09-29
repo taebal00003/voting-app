@@ -30,7 +30,7 @@ export default async function AdminPage() {
                 >
                   <span className="min-w-0 space-y-0.5">
                     <span className="block font-medium">{poll.title}</span>
-                    <ClosingBadge closesAt={poll.closesAt} isClosed={poll.isClosed} />
+                    <ClosingBadge closing={poll} withTime />
                   </span>
                   <span className="shrink-0 text-sm text-slate-600">{poll.participationCount}명 참여</span>
                 </Link>

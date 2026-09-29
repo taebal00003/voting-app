@@ -28,7 +28,7 @@ export default async function PollPage(props: PageProps<"/polls/[id]">) {
         </Link>
         <div className="space-y-1">
           <h1 className="text-xl font-bold">{poll.title}</h1>
-          <ClosingLine closesAt={poll.closesAt} isClosed={poll.isClosed} />
+          <ClosingLine closing={poll} />
         </div>
         {participated && notice === "already" && (
           <p className="card text-sm text-slate-700">이미 이 투표에 참여했어요. 결과는 아래와 같아요.</p>

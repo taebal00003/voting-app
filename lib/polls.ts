@@ -3,8 +3,11 @@ import { CLOSING_TIME_PAST, checkPollDraft, parseClosingTime } from "./rules";
 
 export type Option = { id: string; label: string; voteCount: number };
 
-/** 마감 시각(null이면 마감 없음)과, DB 시각 기준으로 마감됐는지 (db/schema.sql의 poll_states) */
-type Closing = { closesAt: Date | null; isClosed: boolean };
+/**
+ * 마감 시각(null이면 마감 없음), DB 시각 기준으로 마감됐는지(db/schema.sql의 poll_states),
+ * 그리고 그 판정에 쓴 DB 시각. 남은 시간도 이 시각을 기준으로 계산해서 판정과 어긋나지 않게 한다.
+ */
+export type Closing = { closesAt: Date | null; isClosed: boolean; checkedAt: Date };
 
 export type Poll = { id: string; title: string; options: Option[] } & Closing;
 export type PollListItem = { id: string; title: string; participated: boolean } & Closing;
@@ -14,19 +17,20 @@ function closingOf(row: Record<string, unknown>): Closing {
   return {
     closesAt: row.closes_at ? new Date(row.closes_at as string) : null,
     isClosed: row.is_closed === true,
+    checkedAt: new Date(row.checked_at as string),
   };
 }
 
 export async function listPollsFor(voterId: string): Promise<PollListItem[]> {
   if (!isUuid(voterId)) return [];
   const rows = await sql`
-    select p.id, p.title, p.closes_at, s.is_closed,
+    select p.id, p.title, p.closes_at, s.is_closed, now() as checked_at,
       exists (
         select 1 from participations pa
         where pa.poll_id = p.id and pa.voter_id = ${voterId}
       ) as participated
-    from polls p join poll_states s using (id)
-    order by s.list_position`;
+    from polls p join poll_states s using (id) join poll_list_order o using (id)
+    order by o.list_position`;
   return rows.map((r) => ({
     id: r.id,
     title: r.title,
@@ -37,10 +41,10 @@ export async function listPollsFor(voterId: string): Promise<PollListItem[]> {
 
 export async function listPollsForAdmin(): Promise<AdminPollListItem[]> {
   const rows = await sql`
-    select p.id, p.title, p.closes_at, s.is_closed,
+    select p.id, p.title, p.closes_at, s.is_closed, now() as checked_at,
       (select count(*) from participations pa where pa.poll_id = p.id)::int as participation_count
-    from polls p join poll_states s using (id)
-    order by s.list_position`;
+    from polls p join poll_states s using (id) join poll_list_order o using (id)
+    order by o.list_position`;
   return rows.map((r) => ({
     id: r.id,
     title: r.title,
@@ -53,7 +57,7 @@ export async function getPoll(id: string): Promise<Poll | null> {
   if (!isUuid(id)) return null;
   const [pollRows, optionRows] = await Promise.all([
     sql`
-      select p.id, p.title, p.closes_at, s.is_closed
+      select p.id, p.title, p.closes_at, s.is_closed, now() as checked_at
       from polls p join poll_states s using (id) where p.id = ${id}`,
     sql`select id, label, vote_count from options where poll_id = ${id} order by position`,
   ]);

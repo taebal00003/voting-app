@@ -28,7 +28,7 @@ export default async function Home() {
                 >
                   <span className="min-w-0 space-y-0.5">
                     <span className="block font-medium">{poll.title}</span>
-                    <ClosingBadge closesAt={poll.closesAt} isClosed={poll.isClosed} />
+                    <ClosingBadge closing={poll} />
                   </span>
                   {poll.participated ? (
                     <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">

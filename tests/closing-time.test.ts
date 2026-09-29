@@ -2,14 +2,11 @@ import { describe, expect, test } from "vitest";
 import { castVote, createPoll, getPoll, hasParticipated, listPollsFor, listPollsForAdmin } from "../lib/polls";
 import { addVoters, listRoster } from "../lib/roster";
 import { CLOSING_TIME_MALFORMED, CLOSING_TIME_PAST } from "../lib/rules";
+import { kst } from "./kst";
 import { trackTestData } from "./test-data";
 
 const data = trackTestData();
 
-/** 기준 시각을 한국 시간 입력 칸 형식(YYYY-MM-DDTHH:mm:ss)으로 적는다. */
-function kst(date: Date) {
-  return new Date(date.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 19);
-}
 
 async function voterNamed(label: string) {
   const name = data.name(label);

@@ -1,4 +1,6 @@
 // 서버와 브라우저 양쪽에서 쓰므로 Node 전용 모듈을 import하지 않는다.
+import { KST_OFFSET_MS } from "./closing-display";
+
 export const LIMITS = {
   titleMax: 100,
   optionLabelMax: 50,
@@ -65,7 +67,6 @@ export function checkRosterNames(text: string): Checked<string[]> {
 }
 
 const CLOSING_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 export const CLOSING_TIME_MALFORMED = "마감 시각을 날짜와 시간까지 입력해 주세요.";
 export const CLOSING_TIME_PAST = "마감 시각은 지금 이후여야 해요.";

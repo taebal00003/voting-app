@@ -24,7 +24,7 @@ export default async function AdminPollPage(props: PageProps<"/admin/polls/[id]"
             ← 목록
           </Link>
           <h1 className="text-xl font-bold">{poll.title}</h1>
-          <ClosingLine closesAt={poll.closesAt} isClosed={poll.isClosed} />
+          <ClosingLine closing={poll} />
         </div>
 
         <ResultView poll={poll} showMyChoice={false} />
