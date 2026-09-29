@@ -15,7 +15,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className="h-full antialiased">
       <body className="min-h-full">
-        <div className="mx-auto w-full max-w-md px-4 py-6">{children}</div>
+        <div className="mx-auto w-full max-w-md px-4 py-6">
+          {children}
+          <footer className="mt-10 border-t border-slate-200 pt-4 text-center text-xs text-slate-400">
+            만든 사람: 권태현
+          </footer>
+        </div>
       </body>
     </html>
   );
